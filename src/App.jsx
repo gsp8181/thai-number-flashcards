@@ -22,6 +22,9 @@ function App() {
   const autoTimer = useRef(null)
   const autoPhase = useRef(0) // 0 = showing card, 1 = showing answer
   const autoTickRef = useRef(null)
+  const showAnswerRef = useRef(showAnswer)
+  const ttsEnabledRef = useRef(ttsEnabled)
+  const currentRef = useRef(current)
 
   useEffect(() => {
     function handleKeys(e) {
@@ -47,6 +50,18 @@ function App() {
     return () => stopAuto()
   }, [autoAdvance, intervalSec, max])
 
+  useEffect(() => {
+    showAnswerRef.current = showAnswer
+  }, [showAnswer])
+
+  useEffect(() => {
+    ttsEnabledRef.current = ttsEnabled
+  }, [ttsEnabled])
+
+  useEffect(() => {
+    currentRef.current = current
+  }, [current])
+
   function startAuto() {
     stopAuto()
     const m = clampMax(max)
@@ -61,17 +76,30 @@ function App() {
       if (autoPhase.current === 0) {
         // reveal
         setShowAnswer(true)
+        // speak when revealing automatically
+        if (ttsEnabledRef.current && currentRef.current != null) {
+          speakThai(numberToThaiWords(currentRef.current))
+        }
         autoPhase.current = 1
       } else {
-        // new card
-        const mm = clampMax(max)
-        if (mm <= 0) {
-          stopAuto()
-          return
+        // If the answer is currently hidden (user hid it), prefer to reveal instead of fetching a new number
+        if (!showAnswerRef.current) {
+          setShowAnswer(true)
+          if (ttsEnabledRef.current && currentRef.current != null) {
+            speakThai(numberToThaiWords(currentRef.current))
+          }
+          autoPhase.current = 1
+        } else {
+          // new card
+          const mm = clampMax(max)
+          if (mm <= 0) {
+            stopAuto()
+            return
+          }
+          nextRandom()
+          setShowAnswer(false)
+          autoPhase.current = 0
         }
-        nextRandom()
-        setShowAnswer(false)
-        autoPhase.current = 0
       }
       autoTimer.current = setTimeout(tick, Math.max(1000, intervalSec * 1000))
     }

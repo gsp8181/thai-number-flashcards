@@ -28,17 +28,13 @@ Quick start:
 
 GitHub Pages:
 - A workflow is included in `.github/workflows/pages.yml` that builds and deploys the `dist/` site to GitHub Pages via the official Pages actions.
-- If this repository will be deployed under a project page (e.g., https://username.github.io/repo-name/), set `base` in `vite.config.js` to `'/repo-name/'` (uncomment and update the example).
 - Push to `main` and the workflow will build & publish.
 
 Notes:
 - TTS uses the browser's speechSynthesis; choose a browser that supports Thai voices (Chrome generally provides good voice selection).
 - The Thai conversion supports up to 10,000,000; numbers above that will be returned as plain digits.
 
-If you'd like:
-- TypeScript conversion
-- An actual GitHub repo created and the files pushed
+todo:
+- Auto advance countdown
 - Alternative romanization (strict RTGS) or more accurate phonetic variants
-
-Tell me which and I can update/create the repo or open a PR.
 ```
