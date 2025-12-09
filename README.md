@@ -37,4 +37,5 @@ Notes:
 todo:
 - Auto advance countdown
 - Alternative romanization (strict RTGS) or more accurate phonetic variants
+- night mode
 ```

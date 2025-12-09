@@ -61,6 +61,57 @@ function App() {
     ttsEnabledRef.current = ttsEnabled
   }, [ttsEnabled])
 
+  // Helper to asynchronously get voices (some browsers populate async)
+  function getVoicesAsync(timeout = 1500) {
+    return new Promise((resolve) => {
+      try {
+        const v = window.speechSynthesis.getVoices()
+        if (v && v.length) return resolve(v)
+      } catch (e) {
+        return resolve([])
+      }
+      let resolved = false
+      const onChange = () => {
+        if (resolved) return
+        const v = window.speechSynthesis.getVoices()
+        if (v && v.length) {
+          resolved = true
+          cleanup()
+          resolve(v)
+        }
+      }
+      const cleanup = () => {
+        try {
+          window.speechSynthesis.onvoiceschanged = null
+        } catch (e) {}
+        clearTimeout(timer)
+      }
+      try {
+        window.speechSynthesis.onvoiceschanged = onChange
+      } catch (e) {}
+      const timer = setTimeout(() => {
+        if (resolved) return
+        resolved = true
+        cleanup()
+        try {
+          resolve(window.speechSynthesis.getVoices() || [])
+        } catch (e) {
+          resolve([])
+        }
+      }, timeout)
+    })
+  }
+
+  function findThaiVoice(voices) {
+    if (!voices || !voices.length) return null
+    let v = voices.find((x) => x.lang && x.lang.toLowerCase().startsWith('th'))
+    if (v) return v
+    v = voices.find((x) => /thai/i.test(x.name))
+    if (v) return v
+    v = voices.find((x) => x.lang && x.lang.toLowerCase().includes('th'))
+    return v || null
+  }
+
   useEffect(() => {
     currentRef.current = current
   }, [current])
@@ -197,12 +248,16 @@ function App() {
   }
 
   function pushToHistory(n) {
-    const nextHistory = history.slice(0, index + 1)
-    nextHistory.push(n)
-    setHistory(nextHistory)
-    setIndex(nextHistory.length - 1)
-    setCurrent(n)
-    setShowAnswer(false)
+    setHistory((prev) => {
+      // If user navigated back, truncate any "future" entries and append
+      const base = prev.slice(0, indexRef.current + 1)
+      const next = base.concat(n)
+      // update index to point to the newly appended item
+      setIndex(next.length - 1)
+      setCurrent(n)
+      setShowAnswer(false)
+      return next
+    })
     setScore((s) => ({ ...s, seen: s.seen + 1 }))
   }
 
@@ -324,7 +379,33 @@ function App() {
         </div>
 
         <div className="toggles">
-          <label><input type="checkbox" checked={ttsEnabled} onChange={(e) => setTtsEnabled(e.target.checked)} /> TTS</label>
+          <label>
+            <input
+              type="checkbox"
+              checked={ttsEnabled}
+              onChange={async (e) => {
+                const want = e.target.checked
+                if (want) {
+                  // check availability
+                  if (!('speechSynthesis' in window)) {
+                    alert('Text-to-speech is not available in this browser')
+                    e.target.checked = false
+                    setTtsEnabled(false)
+                    return
+                  }
+                  const voices = await getVoicesAsync(2000)
+                  const thai = findThaiVoice(voices)
+                  if (!thai) {
+                    alert('No Thai TTS voice detected. TTS will be disabled.')
+                    e.target.checked = false
+                    setTtsEnabled(false)
+                    return
+                  }
+                }
+                setTtsEnabled(want)
+              }}
+            /> TTS
+          </label>
           <label><input type="checkbox" checked={showThaiNumerals} onChange={(e) => setShowThaiNumerals(e.target.checked)} /> Show Thai numerals</label>
           <label><input type="checkbox" checked={autoAdvance} onChange={(e) => setAutoAdvance(e.target.checked)} disabled={clampMax(max) <= 0} /> Auto advance</label>
           <label>Interval (sec): <input type="number" min="1" value={intervalSec} onChange={(e) => setIntervalSec(Number(e.target.value) || 5)} /></label>
