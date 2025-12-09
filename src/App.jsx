@@ -17,6 +17,7 @@ function App() {
   const [intervalSec, setIntervalSec] = useState(5)
   const [showThaiNumerals, setShowThaiNumerals] = useState(true)
   const [score, setScore] = useState({ seen: 0, correct: 0 })
+  const [versionHash, setVersionHash] = useState(null)
 
   const autoTimer = useRef(null)
 
@@ -143,6 +144,17 @@ function App() {
     window.speechSynthesis.speak(utter)
   }
 
+  useEffect(() => {
+    // try to load the build version produced during CI (version.json)
+    fetch('version.json', { cache: 'no-store' })
+      .then((r) => {
+        if (!r.ok) throw new Error('no version')
+        return r.json()
+      })
+      .then((j) => setVersionHash(j && j.hash ? j.hash : null))
+      .catch(() => setVersionHash(null))
+  }, [])
+
   return (
     <div className="app">
       <header>
@@ -196,7 +208,7 @@ function App() {
 
       <footer>
         <div>Seen: {score.seen} • Correct: {score.correct}</div>
-        <small>Built with Vite + React. Deploy with GitHub Pages workflow in .github/workflows/pages.yml</small>
+        <small>{versionHash ? `Build: ${versionHash}` : 'Unknown build'} • Created by gsp8181</small>
       </footer>
     </div>
   )
