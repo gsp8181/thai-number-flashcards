@@ -25,6 +25,9 @@ function App() {
   const showAnswerRef = useRef(showAnswer)
   const ttsEnabledRef = useRef(ttsEnabled)
   const currentRef = useRef(current)
+  const historyRef = useRef(history)
+  const indexRef = useRef(index)
+  const lastIndexWhenTimerSet = useRef(index)
 
   useEffect(() => {
     function handleKeys(e) {
@@ -62,6 +65,14 @@ function App() {
     currentRef.current = current
   }, [current])
 
+  useEffect(() => {
+    historyRef.current = history
+  }, [history])
+
+  useEffect(() => {
+    indexRef.current = index
+  }, [index])
+
   function startAuto() {
     stopAuto()
     const m = clampMax(max)
@@ -73,6 +84,12 @@ function App() {
     setShowAnswer(false)
 
     const tick = async () => {
+      if (indexRef.current !== lastIndexWhenTimerSet.current) {
+        autoPhase.current = 0
+        showAnswerRef.current = false
+        setShowAnswer(false)
+        lastIndexWhenTimerSet.current = indexRef.current
+      }
       if (autoPhase.current === 0) {
         // reveal
         setShowAnswer(true)
@@ -90,22 +107,29 @@ function App() {
           }
           autoPhase.current = 1
         } else {
-          // new card
+          // new card: if user is viewing older history, advance through history first
           const mm = clampMax(max)
           if (mm <= 0) {
             stopAuto()
             return
           }
-          nextRandom()
+          if (indexRef.current < (historyRef.current.length - 1)) {
+            // advance in history instead of creating a new random
+            nextInHistory()
+          } else {
+            nextRandom()
+          }
           setShowAnswer(false)
           autoPhase.current = 0
         }
       }
       autoTimer.current = setTimeout(tick, Math.max(1000, intervalSec * 1000))
+      lastIndexWhenTimerSet.current = indexRef.current
     }
 
     autoTickRef.current = tick
     autoTimer.current = setTimeout(tick, Math.max(1000, intervalSec * 1000))
+    lastIndexWhenTimerSet.current = indexRef.current
   }
 
   function stopAuto() {
@@ -122,6 +146,7 @@ function App() {
       clearTimeout(autoTimer.current)
     }
     autoTimer.current = setTimeout(autoTickRef.current, Math.max(1000, intervalSec * 1000))
+    lastIndexWhenTimerSet.current = indexRef.current
   }
 
   function clampMax(n) {
@@ -141,26 +166,33 @@ function App() {
   // UI wrapper handlers that also reset the auto timer when the user acts
   function handleNextRandom() {
     nextRandom()
+    // set phase to showing card
+    autoPhase.current = 0
     resetAutoIfRunning()
   }
 
   function handlePrev() {
     prev()
+    autoPhase.current = 0
     resetAutoIfRunning()
   }
 
   function handleNextInHistory() {
     nextInHistory()
+    autoPhase.current = 0
     resetAutoIfRunning()
   }
 
   function handleToggleReveal() {
     toggleReveal()
+    // if user reveals, set phase to showing answer
+    autoPhase.current = 1
     resetAutoIfRunning()
   }
 
   function handleMarkCorrect() {
     markCorrect()
+    autoPhase.current = 0
     resetAutoIfRunning()
   }
 
