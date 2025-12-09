@@ -10,12 +10,14 @@ createRoot(document.getElementById('root')).render(
 )
 
 // Register service worker in production builds
+// Unregister any old service workers (cleanup from previous manual SWs)
 if ('serviceWorker' in navigator) {
-  // Use relative path to service worker so it works under a subpath
-  window.addEventListener('load', () => {
-    const swPath = './service-worker.js';
-    navigator.serviceWorker.register(swPath)
-      .then((reg) => console.log('Service worker registered:', reg.scope))
-      .catch((err) => console.log('Service worker registration failed:', err));
-  });
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((r) => {
+      // If the registration script URL ends with 'service-worker.js' or 'service-worker', unregister it
+      if (r?.active?.scriptURL?.includes('service-worker')) {
+        r.unregister().then((ok) => console.log('Unregistered old SW:', r.scope, ok));
+      }
+    });
+  }).catch((err) => console.warn('Error checking service workers:', err));
 }
