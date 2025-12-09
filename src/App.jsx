@@ -20,6 +20,8 @@ function App() {
   const [versionHash, setVersionHash] = useState(null)
 
   const autoTimer = useRef(null)
+  const autoPhase = useRef(0) // 0 = showing card, 1 = showing answer
+  const autoTickRef = useRef(null)
 
   useEffect(() => {
     function handleKeys(e) {
@@ -49,16 +51,49 @@ function App() {
     stopAuto()
     const m = clampMax(max)
     if (m <= 0) return
-    autoTimer.current = setInterval(() => {
-      nextRandom()
-    }, Math.max(1000, intervalSec * 1000))
+
+    // start cycle: immediately show a new card then toggle reveal after interval
+    autoPhase.current = 0
+    nextRandom()
+    setShowAnswer(false)
+
+    const tick = async () => {
+      if (autoPhase.current === 0) {
+        // reveal
+        setShowAnswer(true)
+        autoPhase.current = 1
+      } else {
+        // new card
+        const mm = clampMax(max)
+        if (mm <= 0) {
+          stopAuto()
+          return
+        }
+        nextRandom()
+        setShowAnswer(false)
+        autoPhase.current = 0
+      }
+      autoTimer.current = setTimeout(tick, Math.max(1000, intervalSec * 1000))
+    }
+
+    autoTickRef.current = tick
+    autoTimer.current = setTimeout(tick, Math.max(1000, intervalSec * 1000))
   }
 
   function stopAuto() {
     if (autoTimer.current) {
-      clearInterval(autoTimer.current)
+      clearTimeout(autoTimer.current)
       autoTimer.current = null
     }
+  }
+
+  function resetAutoIfRunning() {
+    if (!autoAdvance) return
+    if (!autoTickRef.current) return
+    if (autoTimer.current) {
+      clearTimeout(autoTimer.current)
+    }
+    autoTimer.current = setTimeout(autoTickRef.current, Math.max(1000, intervalSec * 1000))
   }
 
   function clampMax(n) {
@@ -73,6 +108,32 @@ function App() {
     if (m <= 0) return
     const n = Math.floor(Math.random() * m) + 1
     pushToHistory(n)
+  }
+
+  // UI wrapper handlers that also reset the auto timer when the user acts
+  function handleNextRandom() {
+    nextRandom()
+    resetAutoIfRunning()
+  }
+
+  function handlePrev() {
+    prev()
+    resetAutoIfRunning()
+  }
+
+  function handleNextInHistory() {
+    nextInHistory()
+    resetAutoIfRunning()
+  }
+
+  function handleToggleReveal() {
+    toggleReveal()
+    resetAutoIfRunning()
+  }
+
+  function handleMarkCorrect() {
+    markCorrect()
+    resetAutoIfRunning()
   }
 
   function pushToHistory(n) {
@@ -159,12 +220,12 @@ function App() {
     <div className="app">
       <header>
         <h1>Thai Number Flashcards</h1>
-        <p>Random flashcards up to a max number (1..10,000,000). Keyboard: Space reveal, ← previous, → next.</p>
+        <p>Keyboard: Space reveal, ← previous, → next.</p>
       </header>
 
       <section className="controls">
         <label>
-          Max number (0 - 10,000,000):
+          Max number:
           <input
             type="number"
             min="0"
@@ -175,11 +236,11 @@ function App() {
         </label>
 
         <div className="btn-row">
-          <button onClick={() => nextRandom()} disabled={clampMax(max) <= 0}>New Random</button>
-          <button onClick={() => prev()} disabled={index <= 0}>Prev</button>
-          <button onClick={() => nextInHistory()} disabled={clampMax(max) <= 0}>Next</button>
-          <button onClick={() => toggleReveal()}>{showAnswer ? 'Hide' : 'Reveal'}</button>
-          <button onClick={() => markCorrect()} disabled={clampMax(max) <= 0}>Mark Correct & Next</button>
+          <button onClick={() => handleNextRandom()} disabled={clampMax(max) <= 0}>New Random</button>
+          <button onClick={() => handlePrev()} disabled={index <= 0}>Prev</button>
+          <button onClick={() => handleNextInHistory()} disabled={clampMax(max) <= 0}>Next</button>
+          <button onClick={() => handleToggleReveal()}>{showAnswer ? 'Hide' : 'Reveal'}</button>
+          <button onClick={() => handleMarkCorrect()} disabled={clampMax(max) <= 0}>Mark Correct & Next</button>
         </div>
 
         <div className="toggles">
