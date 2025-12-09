@@ -25,8 +25,13 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectRegister: null,
       registerType: 'autoUpdate',
       includeAssets: ['icons/tnf-192.svg', 'icons/tnf-512.svg', 'icons/tnf-192.png', 'icons/tnf-512.png'],
+      src: 'src/sw-custom.js',
       manifest: {
         name: 'Thai Number Flashcards',
         short_name: 'ThaiNums',
