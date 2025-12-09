@@ -28,6 +28,11 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Write version file
+        run: |
+          mkdir -p dist
+          echo "{\"hash\": \"$(git rev-parse --short HEAD)\"}" > dist/version.json
+
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v4
         with:

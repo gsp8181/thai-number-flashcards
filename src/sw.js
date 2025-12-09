@@ -27,25 +27,27 @@ self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     self.clients.claim()
     try {
-      await checkForRemoteManifestAndUpdate()
+      await checkForRemoteVersionAndUpdate()
     } catch (e) {
       // ignore errors during activation
     }
   })())
 })
 
-// Utility: fetch remote manifest.webmanifest (no-cache) and compare to cached copy
-async function checkForRemoteManifestAndUpdate() {
+// Utility: fetch remote /version.json (no-cache) and compare to cached copy
+async function checkForRemoteVersionAndUpdate() {
   try {
-    const res = await fetch('./manifest.webmanifest', {cache: 'no-store'})
+    const res = await fetch('/version.json', {cache: 'no-store'})
     if (!res || !res.ok) return false
-    const remoteText = await res.text()
+    const remote = await res.json()
+    const remoteHash = remote && remote.hash
+    if (!remoteHash) return false
     const vc = await caches.open(VERSION_CACHE)
-    const cached = await vc.match('manifest')
+    const cached = await vc.match('version')
     const cachedText = cached ? await cached.text() : null
-    if (cachedText !== remoteText) {
-      // store new manifest copy
-      await vc.put('manifest', new Response(remoteText))
+    if (cachedText !== remoteHash) {
+      // store new version hash
+      await vc.put('version', new Response(remoteHash))
       // update precache entries (only when online)
       const precache = await caches.open(PRECACHE)
       for (const entry of PRECACHE_MANIFEST || []) {
@@ -128,6 +130,6 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (!event.data) return
   if (event.data.type === 'CHECK_FOR_UPDATES') {
-    event.waitUntil(checkForRemoteManifestAndUpdate())
+    event.waitUntil(checkForRemoteVersionAndUpdate())
   }
 })
