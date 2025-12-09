@@ -214,6 +214,26 @@ function App() {
       })
       .then((j) => setVersionHash(j && j.hash ? j.hash : null))
       .catch(() => setVersionHash(null))
+    // Listen for service worker messages about updates
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (ev) => {
+        try {
+          const data = ev.data || {}
+          if (data.type === 'UPDATED' && data.hash) {
+            // if we have a different version, reload to pick up new assets
+            if (data.hash !== versionHash) {
+              // show version immediately and reload after short delay
+              setVersionHash(data.hash)
+              setTimeout(() => {
+                window.location.reload()
+              }, 1200)
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      })
+    }
   }, [])
 
   return (

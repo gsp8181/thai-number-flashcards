@@ -58,6 +58,15 @@ async function checkForRemoteVersionAndUpdate() {
           // ignore fetch errors (network issues)
         }
       }
+      // notify clients that a new version was installed and cached
+      try {
+        const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        for (const client of all) {
+          client.postMessage({ type: 'UPDATED', hash: remoteHash })
+        }
+      } catch (e) {
+        // ignore messaging errors
+      }
       return true
     }
   } catch (err) {
