@@ -46,6 +46,8 @@ function App() {
 
   function startAuto() {
     stopAuto()
+    const m = clampMax(max)
+    if (m <= 0) return
     autoTimer.current = setInterval(() => {
       nextRandom()
     }, Math.max(1000, intervalSec * 1000))
@@ -59,11 +61,15 @@ function App() {
   }
 
   function clampMax(n) {
-    const num = Number(n) || 1
-    return Math.min(Math.max(1, Math.floor(num)), 10000000)
+    // Allow empty string and zero as valid while keeping bounds
+    if (n === '' || n === null) return 0
+    const num = Number(n)
+    if (Number.isNaN(num)) return 0
+    return Math.min(Math.max(0, Math.floor(num)), 10000000)
   }
 
   function newRandomWithMax(m) {
+    if (m <= 0) return
     const n = Math.floor(Math.random() * m) + 1
     pushToHistory(n)
   }
@@ -80,8 +86,17 @@ function App() {
 
   function nextRandom() {
     const m = clampMax(max)
+    if (m <= 0) return
     newRandomWithMax(m)
   }
+
+  // When max becomes 0, ensure auto-advance is disabled and timers stopped
+  useEffect(() => {
+    if (clampMax(max) <= 0) {
+      setAutoAdvance(false)
+      stopAuto()
+    }
+  }, [max])
 
   function prev() {
     if (index > 0) {
@@ -137,10 +152,10 @@ function App() {
 
       <section className="controls">
         <label>
-          Max number (1 - 10,000,000):
+          Max number (0 - 10,000,000):
           <input
             type="number"
-            min="1"
+            min="0"
             max="10000000"
             value={max}
             onChange={(e) => setMax(clampMax(e.target.value))}
@@ -148,17 +163,17 @@ function App() {
         </label>
 
         <div className="btn-row">
-          <button onClick={() => nextRandom()}>New Random</button>
+          <button onClick={() => nextRandom()} disabled={clampMax(max) <= 0}>New Random</button>
           <button onClick={() => prev()} disabled={index <= 0}>Prev</button>
-          <button onClick={() => nextInHistory()}>Next</button>
+          <button onClick={() => nextInHistory()} disabled={clampMax(max) <= 0}>Next</button>
           <button onClick={() => toggleReveal()}>{showAnswer ? 'Hide' : 'Reveal'}</button>
-          <button onClick={() => markCorrect()}>Mark Correct & Next</button>
+          <button onClick={() => markCorrect()} disabled={clampMax(max) <= 0}>Mark Correct & Next</button>
         </div>
 
         <div className="toggles">
           <label><input type="checkbox" checked={ttsEnabled} onChange={(e) => setTtsEnabled(e.target.checked)} /> TTS</label>
           <label><input type="checkbox" checked={showThaiNumerals} onChange={(e) => setShowThaiNumerals(e.target.checked)} /> Show Thai numerals</label>
-          <label><input type="checkbox" checked={autoAdvance} onChange={(e) => setAutoAdvance(e.target.checked)} /> Auto advance</label>
+          <label><input type="checkbox" checked={autoAdvance} onChange={(e) => setAutoAdvance(e.target.checked)} disabled={clampMax(max) <= 0} /> Auto advance</label>
           <label>Interval (sec): <input type="number" min="1" value={intervalSec} onChange={(e) => setIntervalSec(Number(e.target.value) || 5)} /></label>
         </div>
       </section>
