@@ -46,28 +46,55 @@ async function checkForRemoteVersionAndUpdate() {
     const cached = await vc.match('version')
     const cachedText = cached ? await cached.text() : null
     if (cachedText !== remoteHash) {
-      // store new version hash
-      await vc.put('version', new Response(remoteHash))
-      // update precache entries (only when online)
-      const precache = await caches.open(PRECACHE)
+      // Attempt atomic update: fetch into a temp cache named by hash
+      const tempCacheName = `temp-precache-${remoteHash}`
+      const tempCache = await caches.open(tempCacheName)
+      let allOk = true
       for (const entry of PRECACHE_MANIFEST || []) {
         try {
           const r = await fetch(entry.url, {cache: 'no-store'})
-          if (r && r.ok) await precache.put(entry.url, r.clone())
+          if (!r || !r.ok) {
+            allOk = false
+            break
+          }
+          await tempCache.put(entry.url, r.clone())
         } catch (err) {
-          // ignore fetch errors (network issues)
+          allOk = false
+          break
         }
       }
-      // notify clients that a new version was installed and cached
-      try {
-        const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-        for (const client of all) {
-          client.postMessage({ type: 'UPDATED', hash: remoteHash })
+
+      if (allOk) {
+        // commit: replace PRECACHE by deleting old cache and renaming temp by copying
+        // delete old precache
+        await caches.delete(PRECACHE)
+        // create new precache and copy entries from temp
+        const newPre = await caches.open(PRECACHE)
+        const requests = await tempCache.keys()
+        for (const req of requests) {
+          const resp = await tempCache.match(req)
+          if (resp) await newPre.put(req, resp.clone())
         }
-      } catch (e) {
-        // ignore messaging errors
+        // store new version hash
+        await vc.put('version', new Response(remoteHash))
+        // remove temp cache
+        await caches.delete(tempCacheName)
+
+        // notify clients that a new version was installed and cached
+        try {
+          const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+          for (const client of all) {
+            client.postMessage({ type: 'UPDATED', hash: remoteHash })
+          }
+        } catch (e) {
+          // ignore messaging errors
+        }
+        return true
+      } else {
+        // cleanup temp cache on failure
+        try { await caches.delete(tempCacheName) } catch (e) {}
+        return false
       }
-      return true
     }
   } catch (err) {
     // likely offline - don't update
