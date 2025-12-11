@@ -6,6 +6,24 @@
 const digitsThai = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า']
 const thaiNumeralsMap = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙']
 
+const placesThai = [
+    { div: 100000, label: 'แสน' },
+    { div: 10000, label: 'หมื่น' },
+    { div: 1000, label: 'พัน' },
+    { div: 100, label: 'ร้อย' },
+    { div: 10, label: 'สิบ' },
+    { div: 1, label: '' }
+]
+
+const placesRoman = [
+    { div: 100000, label: 'saen' },
+    { div: 10000, label: 'muen' },
+    { div: 1000, label: 'phan' },
+    { div: 100, label: 'roi' },
+    { div: 10, label: 'sip' },
+    { div: 1, label: '' }
+]
+
 function numberToThaiNumerals(n) {
     if (n === null || n === undefined || n === '') return ''
     const num = Number(n)
@@ -23,22 +41,13 @@ function numberToThaiNumerals(n) {
 function convertBelowMillion(n) {
     // n: 0..999999
     if (n === 0) return ''
-    const places = [
-        { div: 100000, label: 'แสน' },
-        { div: 10000, label: 'หมื่น' },
-        { div: 1000, label: 'พัน' },
-        { div: 100, label: 'ร้อย' },
-        { div: 10, label: 'สิบ' },
-        { div: 1, label: '' }
-    ]
-
     let resultParts = []
     let remaining = n
 
-    for (let i = 0; i < places.length; i++) {
-        const { div, label } = places[i]
+    for (let i = 0; i < placesThai.length; i++) {
+        const { div, label } = placesThai[i]
         const digit = Math.floor(remaining / div) % 10
-        const isLastPlace = (i === places.length - 1);
+        const isLastPlace = (i === placesThai.length - 1);
         
         if (digit === 0) {
             continue
@@ -78,15 +87,6 @@ function convertBelowMillion(n) {
 
 function convertBelowMillionGeneric(n, cfg) {
     if (n === 0) return ''
-    const places = [
-        { div: 100000, label: 'saen' },
-        { div: 10000, label: 'muen' },
-        { div: 1000, label: 'phan' },
-        { div: 100, label: 'roi' },
-        { div: 10, label: 'sip' },
-        { div: 1, label: '' }
-    ]
-
     const digits = cfg.digits || []
     const p = cfg.placeTokens || {}
 
@@ -96,37 +96,35 @@ function convertBelowMillionGeneric(n, cfg) {
         return v == null ? '' : (typeof v === 'object' ? (v.r || String(v)) : String(v))
     }
 
+    const handleTensPlace = (digit, sipToken) => {
+        if (digit === 1) return sipToken
+        if (digit === 2) return `${labelToken('yii')} ${sipToken}`
+        return `${getDigit(digit)} ${sipToken}`
+    }
+
+    const handleUnitsPlace = (digit, tensDigit, remaining, isLastPlace, etToken) => {
+        if (digit === 1 && tensDigit > 0) return etToken
+        if (digit === 1 && tensDigit === 0 && remaining === 1) return getDigit(digit)
+        if (digit === 1 && tensDigit === 0 && !isLastPlace) return getDigit(digit)
+        if (digit !== 1) return getDigit(digit)
+        return ''
+    }
+
     let resultParts = []
     let remaining = n
 
-    for (let i = 0; i < places.length; i++) {
-        const { div, label } = places[i]
+    for (let i = 0; i < placesRoman.length; i++) {
+        const { div, label } = placesRoman[i]
         const digit = Math.floor(remaining / div) % 10
-        const isLastPlace = (i === places.length - 1)
+        const isLastPlace = (i === placesRoman.length - 1)
         if (digit === 0) continue
 
         if (div === 10) {
-            const sipToken = labelToken('sip')
-            if (digit === 1) {
-                resultParts.push(sipToken)
-            } else if (digit === 2) {
-                const yiiToken = labelToken('yii')
-                resultParts.push(`${yiiToken} ${sipToken}`)
-            } else {
-                resultParts.push(`${getDigit(digit)} ${sipToken}`)
-            }
+            resultParts.push(handleTensPlace(digit, labelToken('sip')))
         } else if (div === 1) {
             const tensDigit = Math.floor((remaining % 100) / 10)
-            const etToken = labelToken('et')
-            if (digit === 1 && tensDigit > 0) {
-                resultParts.push(etToken)
-            } else if (digit === 1 && tensDigit === 0 && remaining === 1) {
-                resultParts.push(getDigit(digit))
-            } else if (digit === 1 && tensDigit === 0 && !isLastPlace) {
-                resultParts.push(getDigit(digit))
-            } else if (digit !== 1) {
-                resultParts.push(getDigit(digit))
-            }
+            const part = handleUnitsPlace(digit, tensDigit, remaining, isLastPlace, labelToken('et'))
+            if (part) resultParts.push(part)
         } else {
             resultParts.push(getDigit(digit) + (label ? ' ' + labelToken(label) : ''))
         }
@@ -158,6 +156,19 @@ const STYLES = {
     }
 }
 
+function handleMillions(millions, convertFunc, getDigitFunc, laanToken) {
+    let parts = []
+    if (millions > 0) {
+        if (millions === 1) {
+            parts.push(getDigitFunc(1))
+        } else {
+            parts.push(convertFunc(millions))
+        }
+        parts.push(laanToken)
+    }
+    return parts
+}
+
 export function numberToThaiWords(n) {
     n = Number(n)
     if (!Number.isFinite(n) || n === null || n === undefined) return ''
@@ -169,14 +180,7 @@ export function numberToThaiWords(n) {
     const remainder = n % 1000000
     let parts = []
 
-    if (millions > 0) {
-        if (millions === 1) {
-            parts.push(digitsThai[1])
-        } else {
-            parts.push(convertBelowMillion(millions))
-        }
-        parts.push('ล้าน')
-    }
+    parts.push(...handleMillions(millions, convertBelowMillion, (d) => digitsThai[d], 'ล้าน'))
 
     if (remainder > 0) {
         parts.push(convertBelowMillion(remainder))
@@ -202,16 +206,7 @@ function numberToRomanizationWithStyle(n, style = 'PB+') {
     const remainder = n % 1000000
     let parts = []
 
-    // millions
-    if (millions > 0) {
-        if (millions === 1) {
-            parts.push(getDigitFromCfg(1))
-        } else {
-            parts.push(cfg.convertBelowMillion(millions))
-        }
-        const laanStr = getLabelFromCfg('laan')
-        parts.push(laanStr)
-    }
+    parts.push(...handleMillions(millions, cfg.convertBelowMillion, getDigitFromCfg, getLabelFromCfg('laan')))
 
     if (remainder > 0) {
         const remRoman = cfg.convertBelowMillion(remainder)
