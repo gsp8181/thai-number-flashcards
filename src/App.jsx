@@ -34,6 +34,7 @@ function App() {
   })
   const [score, setScore] = useState({ seen: 0, correct: 0 })
   const [versionHash, setVersionHash] = useState(null)
+  const [showSettings, setShowSettings] = useState(false)
 
   const autoTimer = useRef(null)
   const autoPhase = useRef(0) // 0 = showing card, 1 = showing answer
@@ -392,9 +393,16 @@ function App() {
           <button onClick={() => handleNextInHistory()} disabled={clampMax(max) <= 0}>Next</button>
           <button onClick={() => handleToggleReveal()}>{showAnswer ? 'Hide' : 'Reveal'}</button>
           <button onClick={() => handleMarkCorrect()} disabled={clampMax(max) <= 0}>Mark Correct & Next</button>
+          <button onClick={() => setShowSettings(s => !s)} style={{ marginLeft: 8 }}>{showSettings ? 'Hide Settings' : 'Show Settings'}</button>
         </div>
 
         <div className="toggles">
+          <label><input type="checkbox" checked={autoAdvance} onChange={(e) => { const v = e.target.checked; setAutoAdvance(v); try { localStorage.setItem('autoAdvance', v ? '1' : '0') } catch {} }} disabled={clampMax(max) <= 0} /> Auto advance</label>
+          <label>Interval (sec): <input type="number" min="1" value={intervalSec} onChange={(e) => { const v = Number(e.target.value) || 5; setIntervalSec(v); try { localStorage.setItem('intervalSec', String(v)) } catch {} }} /></label>
+        </div>
+
+        {showSettings && (
+          <div className="display-settings">
           <label>
             <input
               type="checkbox"
@@ -402,7 +410,6 @@ function App() {
               onChange={async (e) => {
                 const want = e.target.checked
                 if (want) {
-                  // check availability
                   if (!('speechSynthesis' in window)) {
                     alert('Text-to-speech is not available in this browser')
                     e.target.checked = false
@@ -423,8 +430,10 @@ function App() {
               }}
             /> TTS
           </label>
+
           <label><input type="checkbox" checked={showThaiNumerals} onChange={(e) => { const v = e.target.checked; setShowThaiNumerals(v); try { localStorage.setItem('showThaiNumerals', v ? '1' : '0') } catch {} }} /> Show Thai numerals</label>
           <label><input type="checkbox" checked={showArabicNumerals} onChange={(e) => { const v = e.target.checked; setShowArabicNumerals(v); try { localStorage.setItem('showArabicNumerals', v ? '1' : '0') } catch {} }} /> Show Arabic numerals</label>
+
           <label>
             Romanization:
             <select value={romanStyle} onChange={(e) => { setRomanStyle(e.target.value); try { localStorage.setItem('romanStyle', e.target.value) } catch {} }}>
@@ -433,9 +442,8 @@ function App() {
               <option value="RTGS">RTGS (simple)</option>
             </select>
           </label>
-          <label><input type="checkbox" checked={autoAdvance} onChange={(e) => { const v = e.target.checked; setAutoAdvance(v); try { localStorage.setItem('autoAdvance', v ? '1' : '0') } catch {} }} disabled={clampMax(max) <= 0} /> Auto advance</label>
-          <label>Interval (sec): <input type="number" min="1" value={intervalSec} onChange={(e) => { const v = Number(e.target.value) || 5; setIntervalSec(v); try { localStorage.setItem('intervalSec', String(v)) } catch {} }} /></label>
         </div>
+        )}
       </section>
 
       <main>
