@@ -29,6 +29,9 @@ function App() {
   const [showArabicNumerals, setShowArabicNumerals] = useState(() => {
     try { const v = localStorage.getItem('showArabicNumerals'); return v === null ? true : v === '1' } catch { return true }
   })
+  const [romanStyle, setRomanStyle] = useState(() => {
+    try { const v = localStorage.getItem('romanStyle'); return v || 'PB+' } catch { return 'PB+' }
+  })
   const [score, setScore] = useState({ seen: 0, correct: 0 })
   const [versionHash, setVersionHash] = useState(null)
 
@@ -422,6 +425,14 @@ function App() {
           </label>
           <label><input type="checkbox" checked={showThaiNumerals} onChange={(e) => { const v = e.target.checked; setShowThaiNumerals(v); try { localStorage.setItem('showThaiNumerals', v ? '1' : '0') } catch {} }} /> Show Thai numerals</label>
           <label><input type="checkbox" checked={showArabicNumerals} onChange={(e) => { const v = e.target.checked; setShowArabicNumerals(v); try { localStorage.setItem('showArabicNumerals', v ? '1' : '0') } catch {} }} /> Show Arabic numerals</label>
+          <label>
+            Romanization:
+            <select value={romanStyle} onChange={(e) => { setRomanStyle(e.target.value); try { localStorage.setItem('romanStyle', e.target.value) } catch {} }}>
+              <option value="PB+">PB+</option>
+              <option value="RTGS+">RTGS (+Tone&Vowel)</option>
+              <option value="RTGS">RTGS (simple)</option>
+            </select>
+          </label>
           <label><input type="checkbox" checked={autoAdvance} onChange={(e) => { const v = e.target.checked; setAutoAdvance(v); try { localStorage.setItem('autoAdvance', v ? '1' : '0') } catch {} }} disabled={clampMax(max) <= 0} /> Auto advance</label>
           <label>Interval (sec): <input type="number" min="1" value={intervalSec} onChange={(e) => { const v = Number(e.target.value) || 5; setIntervalSec(v); try { localStorage.setItem('intervalSec', String(v)) } catch {} }} /></label>
         </div>
@@ -437,9 +448,10 @@ function App() {
             number={current}
             showAnswer={showAnswer}
             thaiWords={numberToThaiWords(current)}
-            romanization={numberToRomanization(current)}
+            romanization={numberToRomanization(current, romanStyle)}
             thaiNumerals={showThaiNumerals ? numberToThaiNumerals(current) : null}
             showArabicNumerals={showArabicNumerals}
+            romanStyle={romanStyle}
           />
         )}
       </main>

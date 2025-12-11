@@ -53,6 +53,80 @@ const placeTokens = {
     et:   { r: 'èt' }
 }
 
+// Simplified RTGS (ASCII) tokens (new 'RTGS' style)
+const digitsRTGSSimple = [
+    'sun', // 0
+    'nueng', // 1
+    'song', // 2
+    'sam',  // 3
+    'si',   // 4
+    'ha',   // 5
+    'hok',   // 6
+    'chet',   // 7
+    'paet',  // 8
+    'kao'   // 9
+]
+
+const placeTokensRTGSSimple = {
+    saen: 'saen',
+    muen: 'muen',
+    phan: 'phan',
+    roi:  'roi',
+    sip:  'sip',
+    laan: 'lan',
+    yii:  'yi',
+    et:   'et'
+}
+
+function formatDigitRTGS(digit) {
+    if (digit === null || digit === undefined) return ''
+    return digitsRTGSSimple[digit] || ''
+}
+
+function formatLabelRTGS(lbl) {
+    if (!lbl) return ''
+    const v = placeTokensRTGSSimple[lbl]
+    if (v) return ' ' + v
+    return ' ' + lbl
+}
+
+// PB+ / Paiboon-like romanization tokens (use Unicode diacritics as in provided mapping)
+const digitsPB = [
+    'sǔun', // 0
+    'nʉ̀ng', // 1
+    'sǒong', // 2
+    'sǎam',  // 3
+    'sìi',   // 4
+    'hâa',   // 5
+    'hòk',   // 6
+    'jèt',   // 7
+    'pàet',  // 8
+    'gâao'   // 9
+]
+
+const placeTokensPB = {
+    saen: 'sǎen',
+    muen: 'mʉ̀n',
+    phan: 'phan',
+    roi:  'róoi',
+    sip:  'sìp',
+    laan: 'láan',
+    yii:  'yîi',
+    et:   'èt'
+}
+
+function formatDigitPB(digit) {
+    if (digit === null || digit === undefined) return ''
+    return digitsPB[digit] || ''
+}
+
+function formatLabelPB(lbl) {
+    if (!lbl) return ''
+    const v = placeTokensPB[lbl]
+    if (v) return ' ' + v
+    return ' ' + lbl
+}
+
 function formatLabel(lbl) {
     if (!lbl) return ''
     const tok = placeTokens[lbl]
@@ -185,65 +259,218 @@ function convertBelowMillionRoman(n) {
     return resultParts.join(' ').replace(/\s+/g, ' ').trim()
 }
 
+function convertBelowMillionRomanPB(n) {
+    if (n === 0) return ''
+    const places = [
+        { div: 100000, label: 'saen' },
+        { div: 10000, label: 'muen' },
+        { div: 1000, label: 'phan' },
+        { div: 100, label: 'roi' },
+        { div: 10, label: 'sip' },
+        { div: 1, label: '' }
+    ]
+
+    let resultParts = []
+    let remaining = n
+
+    for (let i = 0; i < places.length; i++) {
+        const { div, label } = places[i]
+        const digit = Math.floor(remaining / div) % 10
+        const isLastPlace = (i === places.length - 1)
+        if (digit === 0) continue
+
+        if (div === 10) {
+            const sipToken = placeTokensPB.sip
+            if (digit === 1) {
+                resultParts.push(sipToken)
+            } else if (digit === 2) {
+                const yiiToken = placeTokensPB.yii
+                resultParts.push(`${yiiToken} ${sipToken}`)
+            } else {
+                resultParts.push(`${formatDigitPB(digit)} ${sipToken}`)
+            }
+        } else if (div === 1) {
+            const tensDigit = Math.floor((remaining % 100) / 10)
+            const etToken = placeTokensPB.et
+            if (digit === 1 && tensDigit > 0) {
+                resultParts.push(etToken)
+            } else if (digit === 1 && tensDigit === 0 && remaining === 1) {
+                resultParts.push(formatDigitPB(digit))
+            } else if (digit === 1 && tensDigit === 0 && !isLastPlace) {
+                resultParts.push(formatDigitPB(digit))
+            } else if (digit !== 1) {
+                resultParts.push(formatDigitPB(digit))
+            }
+        } else {
+            resultParts.push(formatDigitPB(digit) + (label ? formatLabelPB(label) : ''))
+        }
+    }
+
+    return resultParts.join(' ').replace(/\s+/g, ' ').trim()
+}
+
+function convertBelowMillionRomanRTGS(n) {
+    if (n === 0) return ''
+    const places = [
+        { div: 100000, label: 'saen' },
+        { div: 10000, label: 'muen' },
+        { div: 1000, label: 'phan' },
+        { div: 100, label: 'roi' },
+        { div: 10, label: 'sip' },
+        { div: 1, label: '' }
+    ]
+
+    let resultParts = []
+    let remaining = n
+
+    for (let i = 0; i < places.length; i++) {
+        const { div, label } = places[i]
+        const digit = Math.floor(remaining / div) % 10
+        const isLastPlace = (i === places.length - 1)
+        if (digit === 0) continue
+
+        if (div === 10) {
+            const sipToken = placeTokensRTGSSimple.sip
+            if (digit === 1) {
+                resultParts.push(sipToken)
+            } else if (digit === 2) {
+                const yiiToken = placeTokensRTGSSimple.yii
+                resultParts.push(`${yiiToken} ${sipToken}`)
+            } else {
+                resultParts.push(`${formatDigitRTGS(digit)} ${sipToken}`)
+            }
+        } else if (div === 1) {
+            const tensDigit = Math.floor((remaining % 100) / 10)
+            const etToken = placeTokensRTGSSimple.et
+            if (digit === 1 && tensDigit > 0) {
+                resultParts.push(etToken)
+            } else if (digit === 1 && tensDigit === 0 && remaining === 1) {
+                resultParts.push(formatDigitRTGS(digit))
+            } else if (digit === 1 && tensDigit === 0 && !isLastPlace) {
+                resultParts.push(formatDigitRTGS(digit))
+            } else if (digit !== 1) {
+                resultParts.push(formatDigitRTGS(digit))
+            }
+        } else {
+            resultParts.push(formatDigitRTGS(digit) + (label ? formatLabelRTGS(label) : ''))
+        }
+    }
+
+    return resultParts.join(' ').replace(/\s+/g, ' ').trim()
+}
+
 export function numberToThaiWords(n) {
     n = Number(n)
     if (!Number.isFinite(n) || n === null || n === undefined) return ''
-    if (n === 0) return digitsThai[0] // 'ศูนย์'
+    if (n === 0) return digitsThai[0]
     if (n < 0) return 'ลบ ' + numberToThaiWords(-n)
-    if (n > 10000000) return String(n) // out of scope
+    if (n > 10000000) return String(n)
 
-    // handle millions (ล้าน)
     const millions = Math.floor(n / 1000000)
     const remainder = n % 1000000
     let parts = []
-    
+
     if (millions > 0) {
-        // 1,000,000 is always 'nùeng lâan' (หนึ่งล้าน)
         if (millions === 1) {
-             // For 1,000,000, digitsThai[1] is 'หนึ่ง' (neung)
-            parts.push(digitsThai[1]) 
+            parts.push(digitsThai[1])
         } else {
-            // millions > 1: 'sǎawng lâan' (สองล้าน), 'sǎam lâan' (สามล้าน), etc.
             parts.push(convertBelowMillion(millions))
         }
-        parts.push('ล้าน') // 'ล้าน'
+        parts.push('ล้าน')
     }
-    
+
     if (remainder > 0) {
         parts.push(convertBelowMillion(remainder))
     }
     return parts.join('').trim()
 }
 
-export function numberToRomanization(n) {
+function numberToRomanizationWithStyle(n, style = 'PB+') {
     n = Number(n)
     if (!Number.isFinite(n) || n === null || n === undefined) return ''
-    if (n === 0) return formatDigit(0) // Using formatDigit(0) for 'sǔun'
-    if (n < 0) return 'lòp ' + numberToRomanization(-n) // 'ลบ' is 'lòp' (Low tone, short)
+    if (n === 0) {
+        if (style === 'PB+') return formatDigitPB(0)
+        if (style === 'RTGS') return formatDigitRTGS(0)
+        return formatDigit(0) // RTGS+
+    }
+    if (n < 0) return 'lòp ' + numberToRomanizationWithStyle(-n, style)
     if (n > 10000000) return String(n)
 
     const millions = Math.floor(n / 1000000)
     const remainder = n % 1000000
     let parts = []
-    
-    const laanToken = placeTokens.laan.r
 
+    if (style === 'PB+') {
+        const laanToken = placeTokensPB.laan
+        if (millions > 0) {
+            if (millions === 1) {
+                parts.push(formatDigitPB(1))
+            } else {
+                parts.push(convertBelowMillionRomanPB(millions))
+            }
+            parts.push(laanToken)
+        }
+        if (remainder > 0) {
+            const remRoman = convertBelowMillionRomanPB(remainder)
+            if (remRoman) parts.push(remRoman)
+        }
+        return parts.join(' ').trim()
+    }
+    // RTGS+ (precomposed Unicode) vs RTGS (simplified ASCII)
+    if (style === 'RTGS+') {
+        const laanToken = placeTokens.laan.r
+        if (millions > 0) {
+            if (millions === 1) {
+                parts.push(formatDigit(1))
+            } else {
+                parts.push(convertBelowMillionRoman(millions))
+            }
+            parts.push(laanToken)
+        }
+        if (remainder > 0) {
+            const remRoman = convertBelowMillionRoman(remainder)
+            if (remRoman) parts.push(remRoman)
+        }
+        return parts.join(' ').trim()
+    }
+
+    if (style === 'RTGS') {
+        // simplified ASCII RTGS
+        if (millions > 0) {
+            if (millions === 1) {
+                parts.push(formatDigitRTGS(1))
+            } else {
+                // build with RTGS simple converter using placeTokensRTGSSimple
+                parts.push(convertBelowMillionRomanRTGS(millions))
+            }
+            parts.push(placeTokensRTGSSimple.laan)
+        }
+        if (remainder > 0) {
+            const remRoman = convertBelowMillionRomanRTGS(remainder)
+            if (remRoman) parts.push(remRoman)
+        }
+        return parts.join(' ').trim()
+    }
+
+    // default to RTGS+ if unknown
+    const laanToken = placeTokens.laan.r
     if (millions > 0) {
         if (millions === 1) {
-            // 1,000,000 is 'nùeng lâan'
             parts.push(formatDigit(1))
         } else {
-            // millions > 1
             parts.push(convertBelowMillionRoman(millions))
         }
-        parts.push(laanToken) // 'lâan'
+        parts.push(laanToken)
     }
-    
     if (remainder > 0) {
         const remRoman = convertBelowMillionRoman(remainder)
         if (remRoman) parts.push(remRoman)
     }
     return parts.join(' ').trim()
+}
+
+export function numberToRomanization(n, style = 'PB+') {
+    return numberToRomanizationWithStyle(n, style)
 }
 
 export { numberToThaiNumerals }

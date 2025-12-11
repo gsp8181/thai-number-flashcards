@@ -87,7 +87,7 @@ describe('numberToRomanization: exact-string comparisons', () => {
   it('matches the table for 0..29', () => {
     for (let i = 0; i <= 29; i++) {
       const expected = manualRomanMap.get(i)
-      expect(numberToRomanization(i)).toBe(expected)
+        expect(numberToRomanization(i, 'RTGS+')).toBe(expected)
     }
   })
 
@@ -95,7 +95,7 @@ describe('numberToRomanization: exact-string comparisons', () => {
     const units = [100, 1000, 10000, 100000, 1000000]
     for (const u of units) {
       const expected = manualRomanMap.get(u)
-      expect(numberToRomanization(u)).toBe(expected)
+        expect(numberToRomanization(u, 'RTGS+')).toBe(expected)
     }
   })
 })
