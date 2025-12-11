@@ -7,16 +7,28 @@ import {
 } from './utils/numberToThai'
 
 function App() {
-  const [max, setMax] = useState(100)
+  const [max, setMax] = useState(() => {
+    try { const v = localStorage.getItem('max'); return v ? Number(v) : 100 } catch { return 100 }
+  })
   const [current, setCurrent] = useState(null)
   const [history, setHistory] = useState([])
   const [index, setIndex] = useState(-1)
   const [showAnswer, setShowAnswer] = useState(false)
-  const [ttsEnabled, setTtsEnabled] = useState(true)
-  const [autoAdvance, setAutoAdvance] = useState(false)
-  const [intervalSec, setIntervalSec] = useState(5)
-  const [showThaiNumerals, setShowThaiNumerals] = useState(true)
-  const [showArabicNumerals, setShowArabicNumerals] = useState(true)
+  const [ttsEnabled, setTtsEnabled] = useState(() => {
+    try { const v = localStorage.getItem('ttsEnabled'); return v === null ? true : v === '1' } catch { return true }
+  })
+  const [autoAdvance, setAutoAdvance] = useState(() => {
+    try { const v = localStorage.getItem('autoAdvance'); return v === '1' } catch { return false }
+  })
+  const [intervalSec, setIntervalSec] = useState(() => {
+    try { const v = localStorage.getItem('intervalSec'); return v ? Number(v) : 5 } catch { return 5 }
+  })
+  const [showThaiNumerals, setShowThaiNumerals] = useState(() => {
+    try { const v = localStorage.getItem('showThaiNumerals'); return v === null ? true : v === '1' } catch { return true }
+  })
+  const [showArabicNumerals, setShowArabicNumerals] = useState(() => {
+    try { const v = localStorage.getItem('showArabicNumerals'); return v === null ? true : v === '1' } catch { return true }
+  })
   const [score, setScore] = useState({ seen: 0, correct: 0 })
   const [versionHash, setVersionHash] = useState(null)
 
@@ -367,7 +379,7 @@ function App() {
             min="0"
             max="10000000"
             value={max}
-            onChange={(e) => setMax(clampMax(e.target.value))}
+            onChange={(e) => { const v = clampMax(e.target.value); setMax(v); try { localStorage.setItem('max', String(v)) } catch {} }}
           />
         </label>
 
@@ -404,13 +416,14 @@ function App() {
                   }
                 }
                 setTtsEnabled(want)
+                    try { localStorage.setItem('ttsEnabled', want ? '1' : '0') } catch {}
               }}
             /> TTS
           </label>
-          <label><input type="checkbox" checked={showThaiNumerals} onChange={(e) => setShowThaiNumerals(e.target.checked)} /> Show Thai numerals</label>
-          <label><input type="checkbox" checked={showArabicNumerals} onChange={(e) => setShowArabicNumerals(e.target.checked)} /> Show Arabic numerals</label>
-          <label><input type="checkbox" checked={autoAdvance} onChange={(e) => setAutoAdvance(e.target.checked)} disabled={clampMax(max) <= 0} /> Auto advance</label>
-          <label>Interval (sec): <input type="number" min="1" value={intervalSec} onChange={(e) => setIntervalSec(Number(e.target.value) || 5)} /></label>
+          <label><input type="checkbox" checked={showThaiNumerals} onChange={(e) => { const v = e.target.checked; setShowThaiNumerals(v); try { localStorage.setItem('showThaiNumerals', v ? '1' : '0') } catch {} }} /> Show Thai numerals</label>
+          <label><input type="checkbox" checked={showArabicNumerals} onChange={(e) => { const v = e.target.checked; setShowArabicNumerals(v); try { localStorage.setItem('showArabicNumerals', v ? '1' : '0') } catch {} }} /> Show Arabic numerals</label>
+          <label><input type="checkbox" checked={autoAdvance} onChange={(e) => { const v = e.target.checked; setAutoAdvance(v); try { localStorage.setItem('autoAdvance', v ? '1' : '0') } catch {} }} disabled={clampMax(max) <= 0} /> Auto advance</label>
+          <label>Interval (sec): <input type="number" min="1" value={intervalSec} onChange={(e) => { const v = Number(e.target.value) || 5; setIntervalSec(v); try { localStorage.setItem('intervalSec', String(v)) } catch {} }} /></label>
         </div>
       </section>
 
