@@ -43,7 +43,8 @@ button:disabled{opacity:0.5;cursor:not-allowed}
 
 .card-top{display:flex;gap:16px;align-items:baseline}
 .arabic{font-size:36px;font-weight:700}
-.thai-numeral{font-size:20px;color:var(--muted)}
+.thai-numeral{font-size:36px;font-weight:700}
+.num-sep{font-size:20px;color:var(--muted);align-self:center}
 
 .card-body{margin-top:12px;text-align:center}
 .thai-words{font-size:28px;font-weight:600}

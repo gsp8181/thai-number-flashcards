@@ -16,6 +16,7 @@ function App() {
   const [autoAdvance, setAutoAdvance] = useState(false)
   const [intervalSec, setIntervalSec] = useState(5)
   const [showThaiNumerals, setShowThaiNumerals] = useState(true)
+  const [showArabicNumerals, setShowArabicNumerals] = useState(true)
   const [score, setScore] = useState({ seen: 0, correct: 0 })
   const [versionHash, setVersionHash] = useState(null)
 
@@ -407,6 +408,7 @@ function App() {
             /> TTS
           </label>
           <label><input type="checkbox" checked={showThaiNumerals} onChange={(e) => setShowThaiNumerals(e.target.checked)} /> Show Thai numerals</label>
+          <label><input type="checkbox" checked={showArabicNumerals} onChange={(e) => setShowArabicNumerals(e.target.checked)} /> Show Arabic numerals</label>
           <label><input type="checkbox" checked={autoAdvance} onChange={(e) => setAutoAdvance(e.target.checked)} disabled={clampMax(max) <= 0} /> Auto advance</label>
           <label>Interval (sec): <input type="number" min="1" value={intervalSec} onChange={(e) => setIntervalSec(Number(e.target.value) || 5)} /></label>
         </div>
@@ -424,6 +426,7 @@ function App() {
             thaiWords={numberToThaiWords(current)}
             romanization={numberToRomanization(current)}
             thaiNumerals={showThaiNumerals ? numberToThaiNumerals(current) : null}
+            showArabicNumerals={showArabicNumerals}
           />
         )}
       </main>

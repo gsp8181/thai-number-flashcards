@@ -20,7 +20,15 @@ const digitsRTGS = [
 const thaiNumeralsMap = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙']
 
 function numberToThaiNumerals(n) {
-    return String(n).split('').map(ch => thaiNumeralsMap[Number(ch)] || ch).join('')
+    if (n === null || n === undefined || n === '') return ''
+    const num = Number(n)
+    if (!Number.isFinite(num)) {
+        return String(n).split('').map(ch => thaiNumeralsMap[Number(ch)] || ch).join('')
+    }
+    const sign = num < 0 ? '-' : ''
+    const abs = Math.trunc(Math.abs(num))
+    const grouped = abs.toLocaleString('en-US') // add commas in thousands positions
+    return sign + grouped.split('').map(ch => (ch >= '0' && ch <= '9') ? thaiNumeralsMap[Number(ch)] : ch).join('')
 }
 
 // --- Romanization helpers at module scope ---

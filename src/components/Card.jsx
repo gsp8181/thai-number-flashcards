@@ -1,10 +1,11 @@
 import React from 'react'
 
-export default function Card({ number, showAnswer, thaiWords, romanization, thaiNumerals }) {
+export default function Card({ number, showAnswer, thaiWords, romanization, thaiNumerals, showArabicNumerals = true }) {
   return (
     <div className="card">
       <div className="card-top">
-        <div className="arabic">{number.toLocaleString()}</div>
+        {showArabicNumerals && <div className="arabic">{number.toLocaleString()}</div>}
+        {showArabicNumerals && thaiNumerals && <div className="num-sep">•</div>}
         {thaiNumerals && <div className="thai-numeral">{thaiNumerals}</div>}
       </div>
 
