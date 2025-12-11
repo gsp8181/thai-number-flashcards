@@ -20,7 +20,6 @@ function numberToThaiNumerals(n) {
 
 // Generic romanization converter will use per-style digits and placeTokens provided in STYLES.
 
-
 function convertBelowMillion(n) {
     // n: 0..999999
     if (n === 0) return ''
@@ -130,106 +129,6 @@ function convertBelowMillionGeneric(n, cfg) {
             }
         } else {
             resultParts.push(getDigit(digit) + (label ? ' ' + labelToken(label) : ''))
-        }
-    }
-
-    return resultParts.join(' ').replace(/\s+/g, ' ').trim()
-}
-
-function convertBelowMillionRomanPB(n) {
-    if (n === 0) return ''
-    const places = [
-        { div: 100000, label: 'saen' },
-        { div: 10000, label: 'muen' },
-        { div: 1000, label: 'phan' },
-        { div: 100, label: 'roi' },
-        { div: 10, label: 'sip' },
-        { div: 1, label: '' }
-    ]
-
-    let resultParts = []
-    let remaining = n
-
-    for (let i = 0; i < places.length; i++) {
-        const { div, label } = places[i]
-        const digit = Math.floor(remaining / div) % 10
-        const isLastPlace = (i === places.length - 1)
-        if (digit === 0) continue
-
-        if (div === 10) {
-            const sipToken = placeTokensPB.sip
-            if (digit === 1) {
-                resultParts.push(sipToken)
-            } else if (digit === 2) {
-                const yiiToken = placeTokensPB.yii
-                resultParts.push(`${yiiToken} ${sipToken}`)
-            } else {
-                resultParts.push(`${formatDigitPB(digit)} ${sipToken}`)
-            }
-        } else if (div === 1) {
-            const tensDigit = Math.floor((remaining % 100) / 10)
-            const etToken = placeTokensPB.et
-            if (digit === 1 && tensDigit > 0) {
-                resultParts.push(etToken)
-            } else if (digit === 1 && tensDigit === 0 && remaining === 1) {
-                resultParts.push(formatDigitPB(digit))
-            } else if (digit === 1 && tensDigit === 0 && !isLastPlace) {
-                resultParts.push(formatDigitPB(digit))
-            } else if (digit !== 1) {
-                resultParts.push(formatDigitPB(digit))
-            }
-        } else {
-            resultParts.push(formatDigitPB(digit) + (label ? formatLabelPB(label) : ''))
-        }
-    }
-
-    return resultParts.join(' ').replace(/\s+/g, ' ').trim()
-}
-
-function convertBelowMillionRomanRTGS(n) {
-    if (n === 0) return ''
-    const places = [
-        { div: 100000, label: 'saen' },
-        { div: 10000, label: 'muen' },
-        { div: 1000, label: 'phan' },
-        { div: 100, label: 'roi' },
-        { div: 10, label: 'sip' },
-        { div: 1, label: '' }
-    ]
-
-    let resultParts = []
-    let remaining = n
-
-    for (let i = 0; i < places.length; i++) {
-        const { div, label } = places[i]
-        const digit = Math.floor(remaining / div) % 10
-        const isLastPlace = (i === places.length - 1)
-        if (digit === 0) continue
-
-        if (div === 10) {
-            const sipToken = placeTokensRTGSSimple.sip
-            if (digit === 1) {
-                resultParts.push(sipToken)
-            } else if (digit === 2) {
-                const yiiToken = placeTokensRTGSSimple.yii
-                resultParts.push(`${yiiToken} ${sipToken}`)
-            } else {
-                resultParts.push(`${formatDigitRTGS(digit)} ${sipToken}`)
-            }
-        } else if (div === 1) {
-            const tensDigit = Math.floor((remaining % 100) / 10)
-            const etToken = placeTokensRTGSSimple.et
-            if (digit === 1 && tensDigit > 0) {
-                resultParts.push(etToken)
-            } else if (digit === 1 && tensDigit === 0 && remaining === 1) {
-                resultParts.push(formatDigitRTGS(digit))
-            } else if (digit === 1 && tensDigit === 0 && !isLastPlace) {
-                resultParts.push(formatDigitRTGS(digit))
-            } else if (digit !== 1) {
-                resultParts.push(formatDigitRTGS(digit))
-            }
-        } else {
-            resultParts.push(formatDigitRTGS(digit) + (label ? formatLabelRTGS(label) : ''))
         }
     }
 
