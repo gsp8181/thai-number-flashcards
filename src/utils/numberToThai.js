@@ -138,8 +138,8 @@ function convertBelowMillionGeneric(n, cfg) {
 const STYLES = {
     'PB+': {
         name: 'PB+',
-        digits: ['sǔun','nʉ̀ng','sǒong','sǎam','sìi','hâa','hòk','jèt','pàet','gâao'],
-        placeTokens: { saen: 'sǎen', muen: 'mʉ̀n', phan: 'phan', roi: 'róoi', sip: 'sìp', laan: 'láan', yii: 'yîi', et: 'èt' },
+        digits: ['sǔun','nʉ̀ng','sǒɔng','sǎam','sìi','hâa','hòk','jèt','bpɛ̀ɛt','gâao'],
+        placeTokens: { saen: 'sǎɛn', muen: 'mʉ̀ʉn', phan: 'phan', roi: 'rɔ́ɔi', sip: 'sìp', laan: 'láan', yii: 'yîi', et: 'èt' },
         convertBelowMillion: (n) => convertBelowMillionGeneric(n, STYLES['PB+'])
     },
     'RTGS+': {
